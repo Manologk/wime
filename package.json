@@ -1,0 +1,10 @@
+{
+  "name": "wime-store",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes serve@14.2.4 public -l 8788",
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "check": "node --check public/js/store.js && node --check public/js/admin.js && node --check public/js/lib/order.js && node --check public/js/lib/dom.js"
+  }
+}

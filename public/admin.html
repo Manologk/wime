@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Store Admin · Wime</title>
+  <meta name="theme-color" content="#fbf7ee">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <script type="module" src="/js/admin.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a href="/" class="wordmark" aria-label="View store">Wime<span>.</span> <small class="muted">Admin</small></a>
+      <button id="sign-out" class="btn btn-ghost btn-sm" type="button" hidden>Sign out</button>
+    </div>
+  </header>
+
+  <main class="wrap admin-main" id="app">
+    <p class="muted">Loading…</p>
+  </main>
+
+  <dialog id="product-form-dialog" class="modal" aria-labelledby="pf-title">
+    <button class="icon-button modal-close" type="button" data-close aria-label="Close"><svg class="icon icon-md" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <div class="pd-info" id="product-form-body"></div>
+  </dialog>
+</body>
+</html>
