@@ -1,0 +1,12 @@
+// Cloudflare Workers static-assets deploy (dashboard: Workers & Pages → Create → Import a repository).
+// Deploy command: npx wrangler deploy. No build command. The `name` must match the Worker name in the dashboard.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "wime",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./public",
+    // /admin serves admin.html, /admin.html redirects to /admin
+    "html_handling": "auto-trailing-slash"
+  }
+}

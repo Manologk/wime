@@ -2,7 +2,7 @@
 
 This file provides guidance to Codex and other coding agents when working with code in this repository.
 
-Online store for Wime Innovation (wime.best), selling in Zambia (Kwacha, +260 WhatsApp). Checkout ends in a pre-filled WhatsApp message (pay on delivery); there is no payment gateway. Static frontend on Cloudflare Pages, Supabase backend, zero running cost. Setup and deploy steps are in README.md; product truth is in PRODUCT.md.
+Online store for Wime Innovation (wime.best), selling in Zambia (Kwacha, +260 WhatsApp). Checkout ends in a pre-filled WhatsApp message (pay on delivery); there is no payment gateway. Static frontend on Cloudflare (Workers static assets), Supabase backend, zero running cost. Setup and deploy steps are in README.md; product truth is in PRODUCT.md.
 
 The visual design is a port of the owner's Lovable prototype (github.com/Manologk/wime-wellness-market). Its tokens are the oklch custom properties at the top of `public/css/styles.css`. Match that look in any UI change, and don't use the prototype's AI-generated images or copy its product descriptions (they contain wrong facts and health claims).
 
@@ -15,7 +15,7 @@ npm run check    # syntax-check the browser JS
 node --test --test-name-pattern="slugify" "tests/**/*.test.mjs"   # run a single test
 ```
 
-There's no build step and there are no npm dependencies. `public/` is deployed as-is (Pages build output dir = `public`, build command empty).
+There's no build step and there are no npm dependencies. `public/` is deployed as-is by `npx wrangler deploy` using `wrangler.jsonc` (assets-only Worker, no build command). Workers Builds redeploys on every push to `main`.
 
 ## Architecture
 
@@ -30,10 +30,10 @@ There's no build step and there are no npm dependencies. `public/` is deployed a
   - `place_order` raises customer-facing messages with `errcode = 'P0001'`; `store.js` shows those verbatim and replaces any other error with a generic message. Keep that convention when adding validation.
   - Admin = a row in `public.admins` for an `auth.users` id. Public sign-up is disabled in the Supabase dashboard, not in code.
   - Product photos go in the public Storage bucket `product-images` (admin-only writes, 5 MB, jpeg/png/webp).
-- **`public/_headers`**: Cloudflare Pages headers including the CSP. Adding a new external origin (script CDN, image host, font) requires updating the CSP, and inline `style=""` attributes and inline scripts are blocked. Use classes in `styles.css`.
+- **`public/_headers`**: Cloudflare static-assets headers including the CSP. Adding a new external origin (script CDN, image host, font) requires updating the CSP, and inline `style=""` attributes and inline scripts are blocked. Use classes in `styles.css`.
 - Schema changes: edit `schema.sql` so it stays idempotent (`if not exists`, `create or replace`, `drop policy if exists`). The user runs it manually in the Supabase SQL Editor; there's no migration tooling.
 
 ## Constraints
 
-- Must stay at zero cost: Cloudflare Pages free plan and Supabase free tier. Don't add paid services or anything that needs a server.
+- Must stay at zero cost: Cloudflare Workers free plan (static assets only, no Worker script) and Supabase free tier. Don't add paid services or anything that needs a server.
 - This project uses its **own** Supabase account. The Supabase MCP connector available in AI agent sessions is linked to a different account that hosts another app. Don't use it for this project.

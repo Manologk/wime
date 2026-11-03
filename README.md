@@ -2,7 +2,7 @@
 
 A small online store for **wime.best**. Customers add products to a cart, enter their details, and send the order to Wime on WhatsApp, where payment and delivery are arranged. There's no payment gateway.
 
-- **Frontend:** static HTML, CSS and JS in `public/`, hosted free on Cloudflare Pages. There's no build step.
+- **Frontend:** static HTML, CSS and JS in `public/`, hosted free on Cloudflare (Workers static assets). There's no build step.
 - **Backend:** Supabase free tier. Postgres holds products and orders, Storage holds product photos, and Auth handles the admin login.
 - **Admin:** `https://wime.best/admin` is where you edit products, prices, photos and stock, and view orders and update their status.
 
@@ -40,20 +40,20 @@ Sign in at `http://localhost:8788/admin.html`. The six starter products are **hi
 
 Use the photos in `assets/products/`. For soursop and milk thistle, upload the `*_clean.png` versions: their backgrounds are cleaned so they blend into the product cards. Dark Spot Remover Cream and Fat Liver Cleanser still need photos; until then they show a letter placeholder.
 
-## 4. Deploy to Cloudflare Pages
+## 4. Deploy to Cloudflare
 
 1. Push this folder to a GitHub repository.
-2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git**, and pick the repo.
-   - Framework preset: **None**
+2. Cloudflare dashboard → **Workers & Pages → Create → Import a repository**, and pick the repo.
+   - Project name: **`wime`** (must match `name` in `wrangler.jsonc`)
    - Build command: *(leave empty)*
-   - Build output directory: **`public`**
-3. Every push to the main branch redeploys the site.
+   - Deploy command: **`npx wrangler deploy`**
+3. Every push to the main branch redeploys the site. `wrangler.jsonc` tells Cloudflare to serve `public/` as static files.
 
 ## 5. Connect wime.best
 
 1. Cloudflare dashboard → **Add a domain** → `wime.best` (Free plan). Cloudflare gives you two nameservers.
 2. At the registrar where you bought `wime.best`, replace its nameservers with Cloudflare's. This can take a few hours to take effect.
-3. Pages project → **Custom domains → Set up a domain**: add `wime.best`, then `www.wime.best`.
+3. Worker `wime` → **Settings → Domains & Routes → Add → Custom domain**: add `wime.best`, then `www.wime.best`.
 4. Supabase → **Authentication → URL Configuration:** set the Site URL to `https://wime.best`.
 
 ## Good to know
