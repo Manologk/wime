@@ -274,6 +274,10 @@ dialog::backdrop { background: color-mix(in oklab, var(--foreground) 40%, transp
   .product-row { grid-template-columns: 48px 1fr; } .product-row .row-actions { grid-column: span 2; justify-content: flex-start; }
 }
 .preview-img { width: 120px; height: 120px; object-fit: contain; border-radius: var(--radius-xl); border: 1px solid var(--border); background: var(--muted); }
+.preview-wide { width: 200px; object-fit: cover; }
+.hero-fieldset { margin: 4px 0 0; padding: 14px 16px 16px; border: 1px solid var(--border); border-radius: var(--radius-xl); display: flex; flex-direction: column; gap: 10px; background: var(--card); }
+.hero-fieldset legend { padding: 0 6px; font-weight: 600; font-family: var(--font-display); }
+.tag-hero { background: color-mix(in oklab, var(--accent) 30%, transparent); color: var(--accent-foreground); }
 .toast { position: fixed; bottom: 20px; left: 50%; translate: -50% 0; background: var(--foreground); color: var(--background); padding: 10px 16px; border-radius: var(--radius-xl); z-index: 100; font-weight: 500; }
 .btn-whatsapp { background: var(--primary); color: var(--primary-foreground); }
 .btn-whatsapp:hover { opacity: .9; }
@@ -346,3 +350,160 @@ img.cart-thumb { object-fit: contain; padding: 4px; }
   .card-foot { flex-wrap: wrap; gap: 8px; }
 }
 .wordmark small { margin-left: 6px; font-family: var(--font-sans); font-size: 0.875rem; font-weight: 500; }
+
+/* ───────────────────────── alive layer ─────────────────────────
+   Motion grammar: entrances ease-out, on-screen movement ease-in-out, nothing from scale(0),
+   only transform/opacity/filter animate. Exits are faster than entrances. */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --hero-interval: 5.5s;
+}
+
+/* hero copy: staggered rise on load */
+.hero-copy > * { animation: rise 700ms var(--ease-out) both; }
+.hero-copy > :nth-child(2) { animation-delay: 70ms; }
+.hero-copy > :nth-child(3) { animation-delay: 140ms; }
+.hero-copy > :nth-child(4) { animation-delay: 210ms; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+
+.pill { gap: 10px; }
+.pulse { position: relative; width: 8px; height: 8px; border-radius: 50%; background: oklch(0.62 0.16 150); }
+.pulse::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: pulse 2s var(--ease-out) infinite; }
+@keyframes pulse { from { transform: scale(1); opacity: .7; } to { transform: scale(3); opacity: 0; } }
+
+/* the accent underline draws itself in under "naturally." */
+.swash {
+  font-style: normal; color: var(--primary);
+  background: linear-gradient(var(--accent), var(--accent)) 0 92% / 0% 0.16em no-repeat;
+  animation: swash 900ms var(--ease-out) 450ms forwards;
+}
+@keyframes swash { to { background-size: 100% 0.16em; } }
+
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 32px; }
+.hero-actions .btn-lg { margin-top: 0; }
+.hero-note { font-size: 0.875rem; color: var(--muted-foreground); }
+
+/* stage */
+.hero-stage {
+  position: relative; isolation: isolate; overflow: hidden; outline: none;
+  aspect-ratio: 1 / 1; border-radius: var(--radius-3xl); box-shadow: var(--shadow-soft);
+  background: radial-gradient(120% 90% at 50% 100%, var(--muted) 0%, var(--secondary) 70%);
+  touch-action: pan-y; animation: rise 800ms var(--ease-out) 120ms both;
+}
+.hero-orb { position: absolute; z-index: -1; border-radius: 50%; filter: blur(40px); opacity: .55; pointer-events: none; }
+.orb-a { width: 55%; aspect-ratio: 1; left: -10%; top: -8%; background: color-mix(in oklab, var(--accent) 55%, transparent); animation: drift-a 16s var(--ease-in-out) infinite alternate; }
+.orb-b { width: 60%; aspect-ratio: 1; right: -15%; bottom: 5%; background: color-mix(in oklab, var(--primary) 30%, transparent); animation: drift-b 19s var(--ease-in-out) infinite alternate; }
+@keyframes drift-a { to { transform: translate(30%, 20%) scale(1.15); } }
+@keyframes drift-b { to { transform: translate(-25%, -15%) scale(.9); } }
+
+.hero-slides { position: absolute; inset: 0; }
+.hero-slides .hero-shelf { height: 100%; aspect-ratio: auto; border-radius: 0; box-shadow: none; background: none; }
+.hero-slide {
+  position: absolute; inset: 0; margin: 0; display: grid; place-items: center; padding: 7% 12% 32%;
+  opacity: 0; transform: scale(1.06) translateY(10px); filter: blur(8px);
+  transition: opacity 450ms ease, transform 900ms var(--ease-out), filter 450ms ease;
+}
+.hero-slide.is-active { opacity: 1; transform: none; filter: none; }
+/* blend the whole slide (not the img): an animated slide is its own compositing group, so a multiply on the img alone would blend against nothing */
+.hero-slide { mix-blend-mode: multiply; }
+/* the product sits in a fixed box above the card, whatever its own proportions */
+.hero-slide img { position: absolute; left: 10%; top: 6%; width: 80%; height: 60%; object-fit: contain; }
+.hero-slide.is-active img { animation: float 6s var(--ease-in-out) infinite alternate; }
+@keyframes float { from { transform: translateY(0) rotate(-1deg); } to { transform: translateY(-10px) rotate(1deg); } }
+/* a separate hero photo (lifestyle shot) fills the stage instead of floating */
+.hero-slide.is-photo { padding: 0; mix-blend-mode: normal; }
+.hero-slide.is-photo img { inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero-slide.is-photo.is-active img { animation: kenburns 12s ease-out both; }
+@keyframes kenburns { from { transform: scale(1.08); } to { transform: scale(1); } }
+
+/* product card on the stage */
+.hero-card {
+  position: absolute; left: 12px; right: 12px; bottom: 52px; z-index: 2;
+  padding: 12px 12px 12px 16px; border-radius: var(--radius-xl);
+  background: color-mix(in oklab, var(--card) 86%, transparent); backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / .25);
+}
+.hero-card-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hero-card-inner.is-entering { animation: card-in 380ms var(--ease-out) both; }
+@keyframes card-in { from { opacity: 0; transform: translateY(8px); filter: blur(2px); } }
+.hero-card-text { display: flex; flex-direction: column; min-width: 0; }
+.hero-card-name {
+  all: unset; cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; line-height: 1.25;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.hero-card-name:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.hero-card-price { font-weight: 700; margin-top: 2px; }
+.hero-card-add { flex: none; min-height: 44px; padding-inline: 16px; }
+
+/* controls: progress pills (the active one fills over the interval) + arrows on larger screens */
+.hero-controls { position: absolute; left: 0; right: 0; bottom: 12px; z-index: 2; display: flex; justify-content: center; align-items: center; gap: 8px; }
+.hero-dots { display: flex; gap: 2px; }
+.hero-dot { position: relative; width: 26px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer; transition: width 300ms var(--ease-out); }
+.hero-dot::before, .hero-dot-fill { content: ""; position: absolute; left: 4px; right: 4px; top: 11px; height: 6px; border-radius: 999px; }
+.hero-dot::before { background: color-mix(in oklab, var(--foreground) 18%, transparent); }
+.hero-dot-fill { background: var(--primary); transform: scaleX(0); transform-origin: left; }
+.hero-dot[aria-current="true"] { width: 52px; }
+.hero-dot-fill.is-running { animation: fill var(--hero-interval) linear forwards; }
+@keyframes fill { to { transform: scaleX(1); } }
+.hero-stage.is-paused .hero-dot-fill { animation-play-state: paused; }
+.hero-stage.is-static .hero-dot-fill.is-running { animation: none; transform: scaleX(1); }
+.hero-arrow { display: none; width: 40px; height: 40px; place-items: center; border: 0; border-radius: 50%; background: color-mix(in oklab, var(--card) 85%, transparent); cursor: pointer; transition: transform 160ms var(--ease-out), background-color 150ms ease; }
+.hero-arrow:active { transform: scale(.94); }
+@media (min-width: 640px) { .hero-arrow { display: grid; } }
+@media (min-width: 768px) { .hero-card { left: 20px; right: 20px; bottom: 64px; padding: 14px 14px 14px 20px; } .hero-card-name { font-size: 1.2rem; } .hero-controls { bottom: 16px; } }
+
+/* press feedback everywhere */
+.btn, .filter, .icon-button, .qty button, .cart-bar, .tab { transition: transform 160ms var(--ease-out), opacity .15s, background-color .15s, color .15s; }
+.btn:active:not(:disabled), .filter:active, .icon-button:active, .qty button:active:not(:disabled), .tab:active { transform: scale(.97); }
+.cart-bar:active { transform: scale(.98); }
+
+/* cart badge pops when something is added */
+.cart-count.bump { animation: bump 420ms var(--ease-out); }
+@keyframes bump { 40% { transform: scale(1.4); } }
+
+/* cards: staggered fade-up as they scroll in; a small lift on hover (mouse only) */
+.js .reveal { opacity: 0; transform: translateY(16px); transition: opacity 600ms ease, transform 700ms var(--ease-out); }
+.js .reveal.is-in { opacity: 1; transform: none; }
+.reveal[data-i="1"] { transition-delay: 70ms; }
+.reveal[data-i="2"] { transition-delay: 140ms; }
+.card { transition: box-shadow .25s, transform 300ms var(--ease-out), opacity 600ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  .card.is-in:hover { transform: translateY(-4px); }
+  .hero-arrow:hover { background: var(--card); }
+}
+
+/* dialogs: drawer slides from the right, modal rises; exits are quicker than entrances */
+dialog, dialog::backdrop { transition: opacity 200ms ease, transform 220ms var(--ease-out), overlay 220ms allow-discrete, display 220ms allow-discrete; }
+dialog::backdrop { opacity: 0; }
+dialog[open]::backdrop { opacity: 1; transition-duration: 300ms; }
+.drawer { transform: translateX(100%); }
+.drawer[open] { transform: none; transition: transform 340ms var(--ease-drawer), overlay 340ms allow-discrete, display 340ms allow-discrete; }
+.modal { opacity: 0; transform: translateY(12px) scale(.98); }
+.modal[open] { opacity: 1; transform: none; transition: opacity 260ms ease, transform 340ms var(--ease-drawer), overlay 340ms allow-discrete, display 340ms allow-discrete; }
+@starting-style {
+  .drawer[open] { transform: translateX(100%); }
+  .modal[open] { opacity: 0; transform: translateY(12px) scale(.98); }
+  dialog[open]::backdrop { opacity: 0; }
+}
+@media (max-width: 639px) {
+  .modal { transform: translateY(100%); opacity: 1; }
+  @starting-style { .modal[open] { transform: translateY(100%); opacity: 1; } }
+
+  .hero-stage { aspect-ratio: 1 / 1.04; }
+  .hero-actions { margin-top: 22px; }
+  /* sticky cart bar rises in from the bottom edge */
+  .cart-bar { transition: transform 320ms var(--ease-drawer); }
+  @starting-style { .cart-bar { transform: translateY(140%); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy > *, .hero-stage, .hero-card-inner.is-entering, .cart-count.bump { animation: none; }
+  .hero-orb, .pulse::after, .hero-slide.is-active img { animation: none; }
+  .swash { animation: none; background-size: 100% 0.16em; }
+  .hero-slide { transform: none; filter: none; transition: opacity 300ms ease; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+  .drawer, .modal, .drawer[open], .modal[open] { transform: none; }
+  .btn:active, .filter:active, .icon-button:active { transform: none; }
+}

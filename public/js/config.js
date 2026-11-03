@@ -10,7 +10,7 @@ export const config = {
 
   // WhatsApp number that receives orders: international format, digits only,
   // no "+" or leading zero. e.g. Zambia 097 123 4567 → '260971234567'
-  whatsappNumber: '260972988715',
+  whatsappNumber: '260975800939',
 
   // ISO 4217 currency code + locale used to format prices
   currency: 'ZMW',

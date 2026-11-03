@@ -28,6 +28,10 @@ create table if not exists public.products (
 -- Columns added after the first release (no-ops on a fresh install).
 alter table public.products add column if not exists category text not null default 'Wellness';
 alter table public.products add column if not exists tagline  text not null default '';
+-- Homepage hero slideshow: products with in_hero = true are featured, in sort_order.
+-- hero_image_url is an optional separate photo for the hero; empty = use image_url.
+alter table public.products add column if not exists in_hero        boolean not null default false;
+alter table public.products add column if not exists hero_image_url text;
 
 -- Users listed here can use /admin. Add rows manually (see README).
 create table if not exists public.admins (

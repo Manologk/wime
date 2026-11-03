@@ -173,6 +173,7 @@ function renderProducts() {
         h('strong', {}, p.name),
         p.is_active ? null : h('span', { class: 'tag' }, 'Hidden'),
         p.in_stock ? null : h('span', { class: 'tag' }, 'Out of stock'),
+        p.in_hero ? h('span', { class: 'tag tag-hero' }, 'In hero') : null,
         h('p', { class: 'muted small' }, `${p.category} · ${money(p.price)}`),
       ),
       h('div', { class: 'row-actions' },
@@ -180,6 +181,8 @@ function renderProducts() {
           p.in_stock ? 'Mark out of stock' : 'Mark in stock'),
         h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => quickUpdate(p, { is_active: !p.is_active }) },
           p.is_active ? 'Hide' : 'Show'),
+        h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => quickUpdate(p, { in_hero: !p.in_hero }) },
+          p.in_hero ? 'Remove from hero' : 'Add to hero'),
         h('button', { type: 'button', class: 'btn btn-primary btn-sm', onclick: () => openProductForm(p) }, 'Edit'),
       ),
     ));
@@ -201,7 +204,7 @@ async function quickUpdate(p, patch) {
 function openProductForm(p) {
   const dialog = $('#product-form-dialog');
   const isNew = !p;
-  p = p || { name: '', slug: '', category: 'Wellness', tagline: '', description: '', price: '', in_stock: true, is_active: true, sort_order: (state.products.length + 1) * 10, image_url: null };
+  p = p || { name: '', slug: '', category: 'Wellness', tagline: '', description: '', price: '', in_stock: true, is_active: true, in_hero: false, sort_order: (state.products.length + 1) * 10, image_url: null, hero_image_url: null };
 
   const preview = p.image_url ? h('img', { class: 'preview-img', src: p.image_url, alt: '' }) : null;
   const fileInput = h('input', {
@@ -235,6 +238,17 @@ function openProductForm(p) {
     h('div', { class: 'field span-2' }, h('label', { for: 'pf-image' }, 'Photo (JPG, PNG or WebP, up to 5 MB)'), preview, fileInput),
     h('label', { class: 'check' }, h('input', { type: 'checkbox', name: 'is_active', checked: p.is_active }), 'Visible in store'),
     h('label', { class: 'check' }, h('input', { type: 'checkbox', name: 'in_stock', checked: p.in_stock }), 'In stock'),
+    h('fieldset', { class: 'hero-fieldset span-2' },
+      h('legend', {}, 'Homepage slideshow'),
+      h('label', { class: 'check' }, h('input', { type: 'checkbox', name: 'in_hero', checked: p.in_hero }), 'Show this product in the homepage slideshow'),
+      h('p', { class: 'hint' }, 'The slideshow uses the product photo. To show a different picture there (for example a lifestyle shot), add a hero photo below. Slides follow the Display order.'),
+      h('div', { class: 'field' },
+        h('label', { for: 'pf-hero-image' }, 'Hero photo (optional, JPG, PNG or WebP, up to 5 MB)'),
+        p.hero_image_url ? h('img', { class: 'preview-img preview-wide', src: p.hero_image_url, alt: '' }) : null,
+        h('input', { id: 'pf-hero-image', name: 'hero_image', type: 'file', accept: 'image/jpeg,image/png,image/webp' }),
+        p.hero_image_url ? h('label', { class: 'check' }, h('input', { type: 'checkbox', name: 'remove_hero_image' }), 'Remove hero photo (use the product photo)') : null,
+      ),
+    ),
     h('div', { class: 'span-2 toolbar mt-8' },
       isNew ? h('span') : h('button', { type: 'button', class: 'btn btn-danger btn-sm', onclick: () => deleteProduct(p) }, 'Delete product'),
       h('button', { type: 'submit', class: 'btn btn-primary' }, isNew ? 'Add product' : 'Save changes')),
@@ -259,20 +273,22 @@ async function saveProduct(e, p, isNew) {
     sort_order: Number(fd.get('sort_order')) || 0,
     is_active: fd.get('is_active') === 'on',
     in_stock: fd.get('in_stock') === 'on',
+    in_hero: fd.get('in_hero') === 'on',
   };
   const label = submit.textContent;
   const reset = () => { submit.disabled = false; submit.textContent = label; };
   submit.disabled = true;
   submit.textContent = 'Saving…';
 
-  const file = form.elements.image.files[0];
-  if (file) {
-    if (file.size > 5 * 1024 * 1024) { reset(); return toast('That photo is larger than 5 MB.'); }
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const path = `${row.slug}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, { cacheControl: '31536000', contentType: file.type });
-    if (error) { reset(); return fail(error); }
-    row.image_url = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  try {
+    const photo = await uploadImage(form.elements.image.files[0], row.slug);
+    if (photo) row.image_url = photo;
+    const heroPhoto = await uploadImage(form.elements.hero_image.files[0], `${row.slug}-hero`);
+    if (heroPhoto) row.hero_image_url = heroPhoto;
+    else if (form.elements.remove_hero_image?.checked) row.hero_image_url = null;
+  } catch (err) {
+    reset();
+    return err.tooBig ? toast('That photo is larger than 5 MB.') : fail(err);
   }
 
   const { error } = isNew
@@ -285,6 +301,17 @@ async function saveProduct(e, p, isNew) {
   $('#product-form-dialog').close();
   toast(isNew ? 'Product added' : 'Product saved');
   loadProducts();
+}
+
+// Uploads a photo to Storage and returns its public URL (or null when no file was chosen).
+async function uploadImage(file, name) {
+  if (!file) return null;
+  if (file.size > 5 * 1024 * 1024) throw Object.assign(new Error('too big'), { tooBig: true });
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${name}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { cacheControl: '31536000', contentType: file.type });
+  if (error) throw error;
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
 async function deleteProduct(p) {

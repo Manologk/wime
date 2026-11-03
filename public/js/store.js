@@ -1,6 +1,7 @@
 import { config } from './config.js';
 import { supabase, isConfigured } from './supabase.js';
 import { h, $, storage } from './lib/dom.js';
+import { mountHero } from './hero.js';
 import {
   formatMoney, cartLines, cartTotal, cartCount, sanitizeCart,
   buildWhatsAppMessage, whatsappUrl,
@@ -47,7 +48,7 @@ async function loadProducts() {
   }
   const { data, error } = await supabase
     .from('products')
-    .select('id, slug, name, category, tagline, description, price, image_url, in_stock')
+    .select('id, slug, name, category, tagline, description, price, image_url, hero_image_url, in_hero, in_stock')
     .eq('is_active', true)
     .order('sort_order')
     .order('name');
@@ -62,6 +63,7 @@ async function loadProducts() {
   renderFilters();
   renderProducts();
   renderCartCount();
+  mountHero({ products: data, money, onAdd: addToCart, onView: openProduct });
   openProductFromHash();
 }
 
@@ -84,6 +86,7 @@ function addToCart(id) {
 function renderCartCount() {
   const n = cartCount(state.cart);
   const badge = $('#cart-count');
+  if (n > Number(badge.textContent || 0)) bump(badge);
   badge.textContent = n;
   badge.hidden = n === 0;
   $('#cart-open').setAttribute('aria-label', n ? `Open cart, ${n} item${n === 1 ? '' : 's'}` : 'Open cart');
@@ -137,8 +140,8 @@ function renderProducts() {
     return;
   }
   const shown = state.category === 'All' ? state.products : state.products.filter((p) => p.category === state.category);
-  grid.replaceChildren(...shown.map((p) =>
-    h('article', { class: `card${p.in_stock ? '' : ' is-out'}` },
+  grid.replaceChildren(...shown.map((p, i) =>
+    h('article', { class: `card reveal${p.in_stock ? '' : ' is-out'}`, 'data-i': i % 3 },
       h('button', { type: 'button', class: 'card-media', 'aria-label': `View ${p.name}`, onclick: () => openProduct(p) }, productImage(p)),
       h('div', { class: 'card-body' },
         h('span', { class: 'eyebrow' }, p.category),
@@ -147,6 +150,7 @@ function renderProducts() {
         h('div', { class: 'card-foot' }, h('span', { class: 'price' }, money(p.price)), addButton(p)),
       ),
     )));
+  observeReveals(grid);
 }
 
 function openProduct(p) {
@@ -317,6 +321,28 @@ function renderDone() {
 
 // ───────────────────────── misc ─────────────────────────
 
+// Restart a short "pop" animation (cart badge when something is added).
+function bump(el) {
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+// Fade elements up as they scroll into view, once. Without IntersectionObserver
+// (or with reduced motion, handled in CSS) everything is simply visible.
+const revealer = 'IntersectionObserver' in window
+  ? new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('is-in'); revealer.unobserve(e.target); }
+    }
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 })
+  : null;
+function observeReveals(root = document) {
+  for (const el of root.querySelectorAll('.reveal:not(.is-in)')) {
+    if (revealer) revealer.observe(el); else el.classList.add('is-in');
+  }
+}
+
 function showNotice(text) {
   const n = $('#notice');
   n.textContent = text;
@@ -347,6 +373,8 @@ function setupFooter() {
   }
 }
 
+document.documentElement.classList.add('js');
 setupDialogs();
 setupFooter();
+observeReveals();
 loadProducts();

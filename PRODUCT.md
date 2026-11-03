@@ -42,12 +42,13 @@ Wime Innovation is a **reseller**, not the manufacturer of what it sells. Its ed
 - **Zero running cost:** Cloudflare Pages (static, no build step) plus the Supabase free tier. No paid services.
 - Guest checkout only, and no payment integration for now.
 - Products carry a **category** (Herbal bitters / Skin care / Wellness) used by the storefront filters, and an optional short **tagline** shown on cards.
-- **Undecided:** prices, delivery areas and fees, the WhatsApp number.
+- **Delivery (owner confirmed 2026-11-03):** same-day delivery within Lusaka, and delivery to other towns across Zambia. Fees are still undecided, so don't state them.
+- **WhatsApp number:** +260 975 800 939. Prices are set by the owner in `/admin`.
 
 ## Brand Commitments
 
 - The name is **Wime Innovation**, and the domain is **wime.best**.
-- **Visual design is pinned** to the owner's Lovable prototype, https://github.com/Manologk/wime-wellness-market (owner decision 2026-11-01). Keep its cream background, forest-green primary, amber accent, Fraunces display and DM Sans body, rounded cards, pill buttons, hero, trust strip, category filters and cart drawer. It's ported into the static site; the React app itself isn't used.
+- **Visual design is open (owner decision 2026-11-03).** The owner rejected the Lovable-prototype look (cream, forest green, Fraunces/DM Sans) as template-like, not premium, dull, and not making the products pop. A redesign replaces it; the prototype remains only as an anti-reference.
 - The prototype's AI-generated images (the hero with a fictional "AMALTA" brand, and the liver and dark-spot stand-ins) aren't used. Real product photos only.
 - **Trust promises the owner confirmed as true:** genuine imported brands, natural ingredients, fast local delivery, pay on delivery.
 
